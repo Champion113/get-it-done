@@ -8,10 +8,35 @@ var getUserRepos = function (user) {
   fetch(apiUrl).then(function (response) {
     response.json().then(function (data) {
       displayRepos(data, user);
+      fetch(apiUrl).then(function (response) {
+        if (response.ok) {
+          response.json().then(function (data) {
+            displayRepos(data, user);
+          });
+        } else {
+          alert("Error: " + response.statusText);
+        }
+        fetch(apiUrl)
+          .then(function (response) {
+            // request was successful
+            if (response.ok) {
+              response.json().then(function (data) {
+                displayRepos(data, user);
+              });
+            } else {
+              alert("Error: " + response.statusText);
+            }
+          })
+          .catch(function (error) {
+            // Notice this `.catch()` getting chained onto the end of the `.then()` method
+            alert("Unable to connect to GitHub");
+          });
+      });
     });
   });
 };
 ;
+
 //store reference to form element
 var userFormEl = document.querySelector("#user-form");
 var nameInputEl = document.querySelector("#username");
@@ -31,6 +56,11 @@ var formSubmitHandler = function (event) {
 }
 
 var displayRepos = function (repos, searchTerm) {
+  // check if api returned any repos
+  if (repos.length === 0) {
+    repoContainerEl.textContent = "No repositories found.";
+    return;
+  }
   // clear old content
   repoContainerEl.textContent = "";
   repoSearchTerm.textContent = searchTerm;
@@ -53,8 +83,22 @@ var displayRepos = function (repos, searchTerm) {
     // append to container
     repoEl.appendChild(titleEl);
 
+    // create a status element
+    var statusEl = document.createElement("span");
+    statusEl.classList = "flex-row align-center";
+
+    // check if current repo has issues or not
+    if (repos[i].open_issues_count > 0) {
+      statusEl.innerHTML =
+        "<i class='fas fa-times status-icon icon-danger'></i>" + repos[i].open_issues_count + " issue(s)";
+    } else {
+      statusEl.innerHTML = "<i class='fas fa-check-square status-icon icon-success'></i>";
+    }
+
+    // append to container
+    repoEl.appendChild(statusEl);
     // append container to the dom
     repoContainerEl.appendChild(repoEl);
-  } 
-} 
+  }
+}
 userFormEl.addEventListener("submit", formSubmitHandler);
